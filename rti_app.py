@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import random
 import datetime
 
 # --- PAGE CONFIGURATION ---
@@ -13,7 +14,7 @@ st.set_page_config(
 PLAN_TEMPLATES = {
     "TEKS 1.3.D / CCSS 1.0A.C.6 - Fact Strategies within 20": {
         "standard": "TEKS 1.3.D / CCSS 1.0A.C.6",
-        "subject": "Math",
+        "subject": "Math (Fact Strategies)",
         "condition": "Addition & subtraction expressions within 20 (ten-frames, number bonds, cards)",
         "behavior": "apply basic fact strategies (including making 10, decomposing to 10, and doubles/near doubles) to solve accurately",
         "benchmarks": [
@@ -33,7 +34,7 @@ PLAN_TEMPLATES = {
     },
     "TEKS 1.5.B / CCSS 1.NBT.A.1 - Skip Counting to 120": {
         "standard": "TEKS 1.5.B / CCSS 1.NBT.A.1",
-        "subject": "Math",
+        "subject": "Math (Skip Counting)",
         "condition": "Sets up to 120 concrete objects or pictorial representations grouped in sets of 2, 5, or 10",
         "behavior": "skip count by twos, fives, and tens to determine the correct total quantity",
         "benchmarks": [
@@ -53,7 +54,7 @@ PLAN_TEMPLATES = {
     },
     "TEKS ELAR 2.2.A.iv / CCSS RF.2.3 - Phoneme Manipulation": {
         "standard": "TEKS ELAR 2.2.A.iv / CCSS RF.2.3",
-        "subject": "ELAR",
+        "subject": "ELAR (Phonemic Awareness)",
         "condition": "Spoken single-syllable words (CVC, CCVC, CVCC) presented orally without visual print",
         "behavior": "orally add, delete, and substitute initial, final, and medial phonemes to produce the correct new word",
         "benchmarks": [
@@ -177,7 +178,11 @@ with st.sidebar.expander("💾 CSV Backup & Restore", expanded=False):
         except Exception:
             st.error("Error loading CSV file.")
 
-navigation = st.sidebar.radio("Module Navigation:", ["1. SMART Goal & Plan View", "2. Progress Monitoring & Logs"])
+navigation = st.sidebar.radio("Module Navigation:", [
+    "1. SMART Goal & Plan View", 
+    "2. Teaching & CRA Interactive Practice",
+    "3. Progress Monitoring & Logs"
+])
 
 
 # ==============================================================================
@@ -207,9 +212,98 @@ if navigation == "1. SMART Goal & Plan View":
 
 
 # ==============================================================================
-# MODULE 2: PROGRESS MONITORING & LOGS
+# MODULE 2: TEACHING & CRA INTERACTIVE PRACTICE
 # ==============================================================================
-elif navigation == "2. Progress Monitoring & Logs":
+elif navigation == "2. Teaching & CRA Interactive Practice":
+    st.title("🧩 CRA Interactive Teaching Suite")
+    st.caption(f"Active Interactive Mode for: **{active_plan['subject']}** ({active_plan['standard']})")
+
+    # --- TEACHING TOOL FOR MATH 1.3.D ---
+    if "1.3.D" in active_plan["standard"]:
+        cra_stage = st.radio("Select Stage:", ["Concrete (Ten-Frames)", "Representational (Number Bonds)", "Abstract Drill Generator"], horizontal=True)
+        st.markdown("---")
+        
+        if "Concrete" in cra_stage:
+            mode = st.radio("Operation:", ["Make 10 Addition", "Decompose Subtraction"], horizontal=True)
+            if mode == "Make 10 Addition":
+                col1, col2 = st.columns(2)
+                with col1:
+                    a1 = st.slider("First Addend (7-9)", 7, 9, 8)
+                with col2:
+                    a2 = st.slider("Second Addend", 1, 9, 5)
+                needed = 10 - a1
+                rem = a2 - needed
+                st.write(f"### Problem: **{a1} + {a2} = ?**")
+                f1 = ["🔴"] * a1 + ["⚪"] * (10 - a1)
+                f2 = ["🟡"] * a2 + ["⚪"] * (10 - a2)
+                st.markdown("#### Frame 1: " + " ".join(f1[:5]) + " | " + " ".join(f1[5:]))
+                st.markdown("#### Frame 2: " + " ".join(f2[:5]) + " | " + " ".join(f2[5:]))
+                st.info(f"1. Move **{needed}** from Frame 2 to fill Frame 1.\n2. Frame 1 becomes **10**, Frame 2 has **{rem}** remaining.\n3. **10 + {rem} = {10 + rem}**")
+            else:
+                minuend = st.slider("Minuend (11-19)", 11, 19, 14)
+                subtrahend = st.slider("Subtrahend", 1, 9, 6)
+                st.write(f"### Problem: **{minuend} - {subtrahend} = ?**")
+                step1 = minuend - 10
+                step2 = subtrahend - step1
+                st.info(f"1. Clear second frame by taking away **{step1}** to get to 10.\n2. Take away **{step2}** more from the main ten-frame.\n3. **10 - {step2} = {10 - step2}**")
+
+        elif "Representational" in cra_stage:
+            st.write("### Pictorial Decomposition Model")
+            st.latex(r"8 + \underbrace{5}_{2 + 3} \rightarrow (8 + 2) + 3 = 10 + 3 = 13")
+        else:
+            st.button("Generate Random 5-Fact Probe")
+
+    # --- TEACHING TOOL FOR MATH 1.5.B ---
+    elif "1.5.B" in active_plan["standard"]:
+        st.subheader("Interactive 120 Skip-Counting Visualizer")
+        skip_step = st.radio("Select Skip Count Interval:", [10, 5, 2], horizontal=True)
+        max_val = st.slider("Count Up To:", 20, 120, 100, step=10)
+
+        sequence = list(range(skip_step, max_val + 1, skip_step))
+        st.write(f"### Pattern Sequence (By {skip_step}s):")
+        st.write(" ➡️ ".join([str(n) for n in sequence]))
+        
+        st.markdown("---")
+        st.markdown("#### Tactile Grouping Model")
+        if skip_step == 10:
+            st.write("📦 Base-Ten Rods (Groups of 10):")
+            st.write(" ".join(["[🔟]" for _ in range(max_val // 10)]))
+        elif skip_step == 5:
+            st.write("✋ 5-Frame Cards (Groups of 5):")
+            st.write(" ".join(["[🖐️]" for _ in range(max_val // 5)]))
+        else:
+            st.write("👟 Paired Items (Groups of 2):")
+            st.write(" ".join(["[👟👟]" for _ in range(max_val // 2)]))
+
+    # --- TEACHING TOOL FOR ELAR 2.2.A.iv ---
+    elif "2.2.A.iv" in active_plan["standard"]:
+        st.subheader("Interactive Elkonin Sound Marker Box")
+        base_word = st.text_input("Base Word (e.g., cat, top, pin):", value="cat")
+        op = st.radio("Phoneme Operation:", ["Addition", "Deletion", "Substitution"], horizontal=True)
+
+        letters = list(base_word.upper())
+        st.markdown("### Oral Sound Box Representation:")
+        cols = st.columns(len(letters) + 2)
+        for i, l in enumerate(letters):
+            with cols[i+1]:
+                st.button(f"🔊 /{l}/", key=f"sound_{i}")
+        
+        st.markdown("---")
+        if op == "Addition":
+            st.info(f"**Add Sound Prompt:** 'Say **{base_word}**. Add **/s/** to the front.' $\\rightarrow$ **S{base_word.upper()}**")
+        elif op == "Deletion":
+            st.info(f"**Delete Sound Prompt:** 'Say **{base_word}** without the first sound.' $\\rightarrow$ **{base_word[1:].upper()}**")
+        else:
+            st.info(f"**Substitute Sound Prompt:** 'Say **{base_word}**. Change middle sound to **/o/**.' $\\rightarrow$ **{base_word[0].upper()}O{base_word[-1].upper()}**")
+
+    else:
+        st.info("Interactive practice workspace ready for custom strategy input.")
+
+
+# ==============================================================================
+# MODULE 3: PROGRESS MONITORING & LOGS
+# ==============================================================================
+elif navigation == "3. Progress Monitoring & Logs":
     st.title("📈 Progress Monitoring")
     st.caption(f"Student: **{selected_student}** | Target Standard: **{active_plan['standard']}**")
 
